@@ -1,6 +1,6 @@
-// First name: <your first name>
-// Last name: <your last name>
-// Student number: <your student number>
+// First name: Ruben
+// Last name: Kindt
+// Student number: r0656495
 
 
 // FIXED VOCABULARY
@@ -27,6 +27,15 @@ LTCvocabulary V_fixed {
 // Here you can add new types, functions and predicates
 LTCvocabulary V_student {
     extern vocabulary V_fixed
+    type Direction constructed from {up, down, none}
+    
+    //fluents
+    ElDirection(Time):Direction
+    
+    I_ElPosition(Floor)			// init floor position of the el UNUSED
+    C_ElPos(Time):Direction		// cause to change
+    CN_ElPos(Time):Direction	// cause not to change
+    
     
 }
 
@@ -44,9 +53,22 @@ Theory T_fixed : V_student {
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
 Theory T_student:V_student {
-	
-}
+    
+    
+    // inertia
+    {
+        ElPosition(Start)	   = floor <- I_ElPosition(floor)
+        ElPosition(Next(Time)) = floor + 0 <- ElPosition(Time) = floor & ~C_ElPos(Time)
+        ElPosition(Next(Time)) = floor + 1 <- ElPosition(Time) = floor & ElDirection(Time) = up   & C_ElPos(Time)
+        ElPosition(Next(Time)) = floor - 1 <- ElPosition(Time) = floor & ElDirection(Time) = down & C_ElPos(Time)
+    }
+    
+    //EL starts at floor 0
+    I_ELPosition(0).
 
+	
+
+}
 
 // MAIN PROCEDURE
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
