@@ -1,0 +1,72 @@
+// First name: <your first name>
+// Last name: <your last name>
+// Student number: <your student number>
+
+
+// FIXED VOCABULARY
+// DO NOT CHANGE THIS VOCABULARY
+LTCvocabulary V_fixed {
+    type Time isa nat			// A set of time points
+    Start: Time 				// The initial time point
+    partial Next(Time): Time 	// The successor time point of time point t
+    
+    type Floor isa nat									// The set of floors
+    type DoorState constructed from {Closed, Open}		// A set of possible states of the elevator’s doors
+	
+    // Fluents
+    ElPosition(Time):Floor				// The floor of the elevator at time point t
+    ElDoorState(Time):DoorState			// The state of the elevator’s doors at time point t
+    UnansweredRequest(Time, Floor)		// Denotes that there is an unanswered request at floor f at time point t
+    
+    // Actions
+    MakeRequest(Time, Floor) 			// Denotes that a request is made for floor f at time point t
+}
+
+
+// STUDENT VOCABULARY
+// Here you can add new types, functions and predicates
+LTCvocabulary V_student {
+    extern vocabulary V_fixed
+    
+}
+
+// TIME THEORY
+// DO NOT CHANGE THIS THEORY
+Theory T_fixed : V_student {
+    // Defining time
+    {
+        Start = MIN[:Time].
+        ! t: Next(t) = t+1 <- Time(t+1).
+    }
+}
+
+
+// STUDENT THEORY
+// Here you should model the dynamic elevator system
+Theory T_student:V_student {
+	
+}
+
+
+// MAIN PROCEDURE
+// If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
+procedure main() {
+    local CompleteTheory = merge(T_fixed, T_student) 
+    
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
+    model = onemodel(CompleteTheory, S1)
+    
+    // Printing model 
+    print(model)
+
+    // Visualization
+    initVisualization()
+    visualizeElevator(model)
+}
+
+// File responsible for visualization  
+include "visualize_elevator.idp"
+
+// Structures for testing
+// You can open this file and check the given structures 
+include "structures.idp"
