@@ -54,8 +54,24 @@ floor changes only if door closed
 no door change and floor change in the same time unit
 
 
-MakeRequest(t, f ) should
-only take effect if UnansweredRequest(t, f ) does not hold
+MakeRequest(t, f ) should only take effect if UnansweredRequest(t, f ) does not hold
+
+
+#waiting then request on current floor
+keep current direction 
+
+#going up then waiting then current floor request + request below
+direction up handle current floor -> no other requests -> handle below
+
+#going up then waiting then current floor request + request below + request above 
+direction up handle current floor -> handle above requests -> handle below
+
+#going up then waiting then current floor request + request 1 below + request 2 above 
+direction up handle current floor -> handle above requests -> handle below
+
+#multiple request on same floor?
+
+#multiple request on same floor back to back
 
 
 
