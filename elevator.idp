@@ -195,9 +195,3 @@ include "visualize_elevator.idp"
 // Structures for testing
 // You can open this file and check the given structures 
 include "structures.idp"
-
-include "idpd3/run.idp"
-include "idpd3"
-
-include "idp"
-include "idp/run.idp"
