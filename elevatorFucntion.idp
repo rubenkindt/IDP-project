@@ -1,0 +1,183 @@
+// First name: Ruben
+// Last name: Kindt
+// Student number: r0656495
+
+
+// FIXED VOCABULARY
+// DO NOT CHANGE THIS VOCABULARY
+LTCvocabulary V_fixed {
+    type Time isa nat			// A set of time points
+    Start: Time 				// The initial time point
+    partial Next(Time): Time 	// The successor time point of time point t
+    
+    type Floor isa nat									// The set of floors
+    type DoorState constructed from {Closed, Open}		// A set of possible states of the elevator’s doors
+	
+    // Fluents
+    ElPosition(Time):Floor				// The floor of the elevator at time point t
+    ElDoorState(Time):DoorState			// The state of the elevator’s doors at time point t
+    UnansweredRequest(Time, Floor)		// Denotes that there is an unanswered request at floor f at time point t
+    
+    // Actions
+    MakeRequest(Time, Floor) 			// Denotes that a request is made for floor f at time point t
+}
+
+
+// STUDENT VOCABULARY
+// Here you can add new types, functions and predicates
+LTCvocabulary V_student {
+    extern vocabulary V_fixed
+    type Direction constructed from {up, down, none}
+    //did not decide for a none direction, since it is not a direction and waiting should prevent moving in a direction and not be a direction itself
+    //If none was a direction should not interfear with 
+    	//only up<->down changes take a time unit
+    		
+    
+    
+    //fluents
+    ElDirection(Time):Direction
+    
+    I_ElDirection(Direction)
+    Cchange_ElDirection(Time, Direction)	//cause to change p113
+    
+    
+    I_ElPosition(Floor)			// init floor position of the el
+    Cchange_ElPos(Time)			// cause to position change
+    CNchange_ElPos(Time)			// cause to position change
+    
+    
+    I_UAnsweredRequest(Time, Floor)
+    C_UAnsweredRequest(Time, Floor)
+    CN_UAnsweredRequest(Time, Floor)
+    
+    waiting(Time)
+
+}
+
+// TIME THEORY
+// DO NOT CHANGE THIS THEORY
+Theory T_fixed : V_student {
+    // Defining time
+    {
+        Start = MIN[:Time].
+        ! t: Next(t) = t+1 <- Time(t+1).
+    }
+}
+
+
+// STUDENT THEORY
+// Here you should model the dynamic elevator system
+Theory T_student:V_student {
+    
+    {//inertia Directions
+        ! dir[Direction]: ElDirection(Start) = dir <- I_ElDirection(dir). // problems with direction change taking 1 time =/= intention
+        ! dir[Direction] t[Time]: 
+        	ElDirection(Next(t)) = dir 	<- Cchange_ElDirection(t, dir).
+        ! t[Time]: 
+        	ElDirection(Next(t)) = ElDirection(t) <-  ~?dir[Direction]: Cchange_ElDirection(t, dir).
+    }    
+    
+    { //causes to Cchange_ElDirection changes
+        
+        I_ElDirection(up).
+        
+        // there is a cause to change direction to up if we go where going down and no UARequests below or here  
+        ! dir[Direction] t[Time]: Cchange_ElDirection(t, up) <- 
+        	ElDirection(t) = down & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>=floor}=0.
+        
+        // there is a cause to change direction to down if we go where going up and no UARequests higer or here  
+        ! dir[Direction] t[Time]: Cchange_ElDirection(t, down) <-
+        	ElDirection(t) = up & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)=<floor}=0.
+        
+                
+        // there is a cause to change direction to up if we were waiting and there is a UARequest above
+        ! dir[Direction] t[Time]: Cchange_ElDirection(t, up) <- 
+        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)<floor} >0. 
+        
+        // there is a cause to change direction to down if we were waiting and there is a UARequest below
+        ! dir[Direction] t[Time]: Cchange_ElDirection(t, down) <- 
+        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>floor} >0. 
+        
+        // there is a cause to change direction to none if there are no UARequests
+        ! dir[Direction] t[Time]: Cchange_ElDirection(t, none) <- 
+        	ElDirection(t) ~= none & #{floor[Floor]: UnansweredRequest(t, floor)}=0.// & ElPosition(t)~=floor} >0. 
+    }
+
+    {
+        ElPosition(Start) = 0.// <- I_ElPosition(floor).
+        ! floor[Floor] t[Time]: 
+        	ElPosition(Next(t)) = floor + 0 <- Cchange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = none.
+        ! floor[Floor] t[Time]: 
+        	ElPosition(Next(t)) = floor + 1 <- Cchange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = up.
+        ! floor[Floor] t[Time]: 
+        	ElPosition(Next(t)) = floor - 1 <- Cchange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = down.
+        
+        //! floor[Floor] t[Time]: 
+        //	ElPosition(Next(t)) = floor <- ElPosition(t) = floor & ~CNchange_ElPos(t).
+    }
+    
+    {//cause
+        I_ElPosition(0) <- true.
+        !t[Time]: Cchange_ElPos(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)~=floor} >0.
+        //!t[Time]: CNchange_ElPos(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)~=floor} =0.
+        //cause to not change when door is opening
+    }
+    /*
+    // inertia Requests
+    {
+        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- I_UAnsweredRequest(t, floor).
+        //! floor[Floor] t[Time]: 
+        //	UnansweredRequest(Next(t), floor) <- C_UAnsweredRequest(t, floor).
+        ! floor[Floor] t[Time]: 
+        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~CN_UAnsweredRequest(t, floor).
+
+    }
+    {
+        ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
+        //! floor[Floor] t[Time]: C_AnsweredRequest(t, floor) <- ElPosition(t) = floor.
+    }
+    ! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <=> ElPosition(t) = floor.
+*/
+}
+
+
+// MAIN PROCEDURE
+// If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
+procedure main() {
+    local CompleteTheory = merge(T_fixed, T_student) 
+    
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
+    model = onemodel(CompleteTheory, S1)
+    //model = unsatstructure(CompleteTheory, S1)
+
+    
+    
+    // Printing model 
+    print(model)
+
+    // Visualization
+    initVisualization()
+    visualizeElevator(model)
+}
+
+/*
+procedure minimumExplanation(partialS,consequence,rules) {
+	negativeCons = makefalse(FalseStr) // negationofconsequence, use makefalseprocedure
+	Sunsat = merge(partialS, negativeCons)
+	return unsatstructure(rules, Sunsat)
+}
+procedure main( ) {
+	consequences = optimalPropagate(Row3NoDouble5 , S )
+	for consequence in consequences do
+		minimumExplanation(S , consequence, Row3NoDouble5 )
+	end
+}
+*/
+
+
+// File responsible for visualization  
+include "visualize_elevator.idp"
+
+// Structures for testing
+// You can open this file and check the given structures 
+include "structures.idp"
