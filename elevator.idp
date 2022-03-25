@@ -48,6 +48,10 @@ LTCvocabulary V_student {
     AnsweredRequest(Time, Floor)
     
     waiting(Time)
+    
+    I_MakeRequest(Time, Floor)
+    C_AnsweredRequest(Time, Floor)
+    
 }
 
 // TIME THEORY
@@ -65,37 +69,8 @@ Theory T_fixed : V_student {
 // Here you should model the dynamic elevator system
 Theory T_student:V_student {
     
-    {//inertia Directions
-        ! dir[Direction]: ElDirection(Start) = dir <- I_ElDirection(dir).
-        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- ~CNchange_ElDirection(t, dir) & ElDirection(t) = dir.
-        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- Cchange_ElDirection(t, dir).
-        // if waiting and wrong direction could cause 1 delay before el starts moving -> probl not
-    }    
     
-    { //causes to Cchange_ElDirection changes
-        // there is a cause to change direction to up if we go where going down and no UARequests below or here  
-        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), up) <- 
-        	ElDirection(t) = down & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>=floor} >0.
-        
-        // there is a cause to change direction to down if we go where going up and no UARequests higer or here  
-        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), down) <-
-        	ElDirection(t) = up & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)=<floor} >0.
-        
-        
-        // there is a cause to change direction to up if we were waiting and there is a UARequest above
-        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), up) <- 
-        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)<floor} >0. 
-        
-        // there is a cause to change direction to down if we were waiting and there is a UARequest below
-        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), down) <- 
-        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>floor} >0. 
-        
-        // there is a cause to change direction to none if there are no UARequests
-        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), none) <- 
-        	ElDirection(t) ~= none & #{floor[Floor]: UnansweredRequest(t, floor)}>0.// & ElPosition(t)~=floor} >0. 
-    }
-    
-    /*
+        /*
     {//inertia Directions
         ! dir[Direction]: ElDirection(Start) = dir <- I_ElDirection(dir).
         ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- ~Cchange_ElDirection(t) & ElDirection(t) = dir.
@@ -130,28 +105,71 @@ Theory T_student:V_student {
     }
 	*/
     
+    {//inertia Directions
+        ! dir[Direction]: ElDirection(Start) = dir <- I_ElDirection(dir).
+        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- ~Cchange_ElDirection(t, dir) & ElDirection(t) = dir.
+        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- Cchange_ElDirection(t, dir).
+        // if waiting and wrong direction could cause 1 delay before el starts moving -> probl not
+    }    
+    
+    { //causes to Cchange_ElDirection changes
+        
+        I_ElDirection(up).
+        
+        // there is a cause to change direction to up if we go where going down and no UARequests below or here  
+        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), up) <- 
+        	ElDirection(t) = down & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>=floor} >0.
+        
+        // there is a cause to change direction to down if we go where going up and no UARequests higer or here  
+        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), down) <-
+        	ElDirection(t) = up & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)=<floor} >0.
+        
+        
+        // there is a cause to change direction to up if we were waiting and there is a UARequest above
+        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), up) <- 
+        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)<floor} >0. 
+        
+        // there is a cause to change direction to down if we were waiting and there is a UARequest below
+        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), down) <- 
+        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>floor} >0. 
+        
+        
+        // there is a cause to change direction to none if there are no UARequests
+        ! dir[Direction] t[Time]: Cchange_ElDirection(Next(t), none) <- 
+        	ElDirection(t) ~= none & #{floor[Floor]: UnansweredRequest(t, floor)}>0.// & ElPosition(t)~=floor} >0. 
+    	
+    }
+    
     // inertia ElPosition
     {
         ! floor[Floor]: ElPosition(Start) = floor <- I_ElPosition(floor).
-        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor + 0 <- ~CChange_ElPos(t) & ElPosition(t) = floor.// & ElDirection(t) = none.
-        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor + 1 <- CChange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = up.
-        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor - 1 <- CChange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = down.
+        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor + 0 <- 
+        	~CChange_ElPos(t) & ElPosition(t) = floor.// & ElDirection(t) = none.
+        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor + 1 <- 
+        	CChange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = up.
+        ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor - 1 <- 
+        	CChange_ElPos(t) & ElPosition(t) = floor & ElDirection(t) = down.
     }
     
     {//cause
-        I_ElPosition(Start) <- true.
-        !t[Time]: CChange_ElPos(t).
+        I_ElPosition(0) <- true.
+        !t[Time]: CChange_ElPos(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)~=floor} >0.
     }
     
     // inertia Requests
     {
         ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t, floor).
-        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor). //bad: MakeRequest(t, f ) should only take effect if UnansweredRequest(t, f ) does not hold
-        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~AnsweredRequest(t,floor).
+        //! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~C_AnsweredRequest(t, floor). 
+        
+        //! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~AnsweredRequest(t,floor).
     }
+    {
+        //! floor[Floor] t[Time]: I_MakeRequest(t, floor) <- MakeRequest(t,floor).
+        //! floor[Floor] t[Time]: C_AnsweredRequest(t, floor) <- ElPosition(t) = floor.
+    }
+    ! floor[Floor] t[Time]: C_AnsweredRequest(t, floor) <=> ElPosition(t) = floor.
     
-    //EL starts at floor 0
-    I_ElPosition(0).
+
     //el starts with doors closed probl
     
     //one action at the time open | close | move
@@ -165,11 +183,13 @@ Theory T_student:V_student {
     
     
     //the elevator can change directions when it is: waiting | up->down when no higher requests | down->up when no lower requests
-    ! t[Time]: #{floor[Floor]: UnansweredRequest(t, floor)}>0 => Cchange_ElDirection(t).
+    //! t[Time]: #{floor[Floor]: UnansweredRequest(t, floor)}>0 => Cchange_ElDirection(t).
     
 	
+  // !t[Time]: #{floor[Floor]: MakeRequest(t,floor)}=1.
 
 }
+
 
 // MAIN PROCEDURE
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
@@ -178,6 +198,9 @@ procedure main() {
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
     model = onemodel(CompleteTheory, S1)
+    model = unsatstructure(CompleteTheory, S1)
+
+    
     
     // Printing model 
     print(model)
@@ -187,6 +210,19 @@ procedure main() {
     visualizeElevator(model)
 }
 
+/*
+procedure minimumExplanation(partialS,consequence,rules) {
+	negativeCons = makefalse(FalseStr) // negationofconsequence, use makefalseprocedure
+	Sunsat = merge(partialS, negativeCons)
+	return unsatstructure(rules, Sunsat)
+}
+procedure main( ) {
+	consequences = optimalPropagate(Row3NoDouble5 , S )
+	for consequence in consequences do
+		minimumExplanation(S , consequence, Row3NoDouble5 )
+	end
+}
+*/
 
 
 // File responsible for visualization  
