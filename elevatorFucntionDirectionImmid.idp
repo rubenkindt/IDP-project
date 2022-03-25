@@ -31,11 +31,9 @@ LTCvocabulary V_student {
     //did not decide for a none direction, since it is not a direction and waiting should prevent moving in a direction and not be a direction itself
     //If none was a direction should not interfear with 
     	//only up<->down changes take a time unit
-    		
-    
-    
+    		//none should not be added because it is not a 
     //fluents
-    ElDirection(Time):Direction
+    ElDirection(Time, Direction) // better than ElDirection(Time)=Direction because if will output one of the {up, down} while this is the set of {up, down} which can be the empty set aka waiting
     
     I_ElDirection(Direction)
     Cchange_ElDirection(Time, Direction)	//cause to change p113
@@ -81,10 +79,10 @@ Theory T_student:V_student {
     }
     {
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t) = up.
+        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up).
         
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t) = down.
+        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down).
         
         
        /* ! floor[Floor] t[Time]: 
@@ -98,38 +96,39 @@ Theory T_student:V_student {
    	{
           
         // there is a cause to change direction to up if we go where going up and UARequests above
-        ! t[Time] f[Floor]: ElDirection(t) = up <- 
+        ! t[Time] f[Floor]: ElDirection(t, up) <- 
         	#{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0 & ~ElPosition(t) = maxFloor.
         
-        ! t[Time] f[Floor]: ElDirection(Next(t))=up <- ElDirection(t)=up & ~ElDirection(t)=down &
+        ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down) &
         	~#{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0 & ~ElPosition(Next(t)) = maxFloor.
         //#{floor[Floor]: UnansweredRequest(Next(t), floor) & floor>ElPosition(Next(t))}>0 & ~ElPosition(Next(t)) = maxFloor.
 
         
         // je mag omlaag gaan als er nog request lager zijn.
-        ! t[Time] : ElDirection(t) = down <- 
+        ! t[Time] : ElDirection(t, down) <- 
         	#{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0 & ~ElPosition(t) = 0.
 
-        ! t[Time] : ElDirection(Next(t))=down <- ElDirection(t)=down &
+        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) &
         	~#{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0 & ~ElPosition(Next(t))=0.
       
     }
     
+    //~? floor[Floor]: UnansweredRequest(10, floor).
     // inertia Requests
     {
-        //! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- I_UAnsweredRequest(t, floor).
-        //! floor[Floor] t[Time]: 
-        //	UnansweredRequest(Next(t), floor) <- C_UAnsweredRequest(t, floor).
-        //! floor[Floor] t[Time]: 
-        //	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~CN_UAnsweredRequest(t, floor).
-
+        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
+        ! floor[Floor] t[Time]: 
+        	UnansweredRequest(Next(t), floor) <- C_UAnsweredRequest(t, floor).
+        ! floor[Floor] t[Time]: 
+        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~CN_UAnsweredRequest(t, floor).
     }
     {
-        ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
-        //! floor[Floor] t[Time]: C_AnsweredRequest(t, floor) <- ElPosition(t) = floor.
+        //! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
+        //! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor.
+        
     }
     //! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <=> ElPosition(t) = floor.
-
+	//! floor[Floor] t[Time]: UnansweredRequest(t, floor) <= MakeRequest(t,floor).
     
     
     /*
@@ -169,9 +168,18 @@ Theory T_student:V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
-    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, S1)
-    //model = unsatstructure(CompleteTheory, S1)
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)              
+    SS=S2
+    
+    model = onemodel(CompleteTheory, SS)
+    if model == nil then
+        print("failed")
+        model = unsatstructure(CompleteTheory, SS)
+ 
+    else 
+        print("sucess")
+    end
+    
 
     
     
