@@ -73,6 +73,9 @@ direction up handle current floor -> handle above requests -> handle below
 
 #multiple request on same floor back to back
 
-
+#UnansweredRequest
+-added with the correct time
+-continue in time
+-approved and removed in next time unit
 
 
