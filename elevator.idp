@@ -43,7 +43,9 @@ LTCvocabulary V_student {
     
     
     I_ElPosition(Floor)			// init floor position of the el
-    CChange_ElPos(Time)			// cause to position change ei are we going to change floor at this timepoint
+    Cchange_ElPos(Time)			// cause to position change e.i. are we going to change floor at this timepoint
+    CNchange_ElPos(Time)		// cause to no position change
+    
     
     AnsweredRequest(Time, Floor)
     
@@ -107,8 +109,11 @@ Theory T_student:V_student {
     
     {//inertia Directions
         ! dir[Direction]: ElDirection(Start) = dir <- I_ElDirection(dir).
-        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- ~Cchange_ElDirection(t, dir) & ElDirection(t) = dir.
-        ! dir[Direction] t[Time]: ElDirection(Next(t)) = dir 	<- Cchange_ElDirection(t, dir).
+        ! dir[Direction] t[Time]: 
+        	ElDirection(Next(t)) = dir 	<- Cchange_ElDirection(t, dir).
+        ! dir[Direction] t[Time]: 
+        	ElDirection(Next(t)) = dir 	<- ~CNchange_ElDirection(t, dir) & ElDirection(t) = dir.
+
         // if waiting and wrong direction could cause 1 delay before el starts moving -> probl not
     }    
     
