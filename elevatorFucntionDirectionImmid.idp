@@ -51,6 +51,10 @@ LTCvocabulary V_student {
     waiting(Time)
 	
     maxFloor: nat 
+    reqBelow(Time)
+    reqAbove(Time)
+    closesReq(Time, Floor)
+    
 }
 
 // TIME THEORY
@@ -97,67 +101,45 @@ Theory T_student:V_student {
           
         // there is a cause to change direction to up if we go where going up and UARequests above
         ! t[Time] f[Floor]: ElDirection(t, up) <- 
-        	#{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0 & ~ElPosition(t) = maxFloor.
+        	reqAbove(t) & ~ElPosition(t) = maxFloor.
         
         ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down) &
-        	~#{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0 & ~ElPosition(Next(t)) = maxFloor.
+        	reqAbove(t) & ~ElPosition(Next(t)) = maxFloor.
         //#{floor[Floor]: UnansweredRequest(Next(t), floor) & floor>ElPosition(Next(t))}>0 & ~ElPosition(Next(t)) = maxFloor.
 
         
         // je mag omlaag gaan als er nog request lager zijn.
         ! t[Time] : ElDirection(t, down) <- 
-        	#{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0 & ~ElPosition(t) = 0.
+        	reqBelow(t) & ~ElPosition(t) = 0.
 
-        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) &
-        	~#{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0 & ~ElPosition(Next(t))=0.
-      
+        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up) &
+        	reqBelow(t) & ~ElPosition(Next(t))=0.
     }
+    !t[Time]: reqBelow(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
+    !t[Time]: reqAbove(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
+  §§§§§§§§§§§  
+    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) &
+    	abs(ElPosition(t)-f) =< abs(ElPosition(t)-f2) => closesReq(t, f).
+    
+    //!t[Time] f[Floor] f2[Floor]: closesReq(t, f) & closesReq(t, f2) => f=f2.
+    
     
     //~? floor[Floor]: UnansweredRequest(10, floor).
     // inertia Requests
     {
-        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
-        ! floor[Floor] t[Time]: 
-        	UnansweredRequest(Next(t), floor) <- C_UAnsweredRequest(t, floor).
+        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- I_UAnsweredRequest(t,floor).
+        //! floor[Floor] t[Time]: 
+        //	UnansweredRequest(Next(t), floor) <- C_UAnsweredRequest(t, floor).
         ! floor[Floor] t[Time]: 
         	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~CN_UAnsweredRequest(t, floor).
     }
     {
-        //! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
-        //! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor.
+        ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
+        ! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor.
         
     }
     //! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <=> ElPosition(t) = floor.
 	//! floor[Floor] t[Time]: UnansweredRequest(t, floor) <= MakeRequest(t,floor).
-    
-    
-    /*
-    { //causes to Cchange_ElDirection changes
-        
-        I_ElDirection(up).
-        
-        // there is a cause to change direction to up if we go where going down and no UARequests below or here  
-        ! dir[Direction] t[Time]: Cchange_ElDirection(t, up) <- 
-        	ElDirection(t) = down & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>=floor}=0.
-        
-        // there is a cause to change direction to down if we go where going up and no UARequests higer or here  
-        ! dir[Direction] t[Time]: Cchange_ElDirection(t, down) <-
-        	ElDirection(t) = up & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)=<floor}=0.
-        
-                
-        // there is a cause to change direction to up if we were waiting and there is a UARequest above
-        ! dir[Direction] t[Time]: Cchange_ElDirection(t, up) <- 
-        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)<floor} >0. 
-        
-        // there is a cause to change direction to down if we were waiting and there is a UARequest below
-        ! dir[Direction] t[Time]: Cchange_ElDirection(t, down) <- 
-        	ElDirection(t) = none & #{floor[Floor]: UnansweredRequest(t, floor) & ElPosition(t)>floor} >0. 
-        
-        // there is a cause to change direction to none if there are no UARequests
-        ! dir[Direction] t[Time]: Cchange_ElDirection(t, none) <- 
-        	ElDirection(t) ~= none & #{floor[Floor]: UnansweredRequest(t, floor)}=0.// & ElPosition(t)~=floor} >0. 
-    }
-*/
     
     
 }
