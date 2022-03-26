@@ -117,11 +117,13 @@ Theory T_student:V_student {
     }
     !t[Time]: reqBelow(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
     !t[Time]: reqAbove(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
-  §§§§§§§§§§§  
-    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) &
-    	abs(ElPosition(t)-f) =< abs(ElPosition(t)-f2) => closesReq(t, f).
+  
     
-    //!t[Time] f[Floor] f2[Floor]: closesReq(t, f) & closesReq(t, f2) => f=f2.
+	// closest request part
+    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
+    	abs(ElPosition(t)-f) =< abs(ElPosition(t)-f2) => closesReq(t, f).
+    !t[Time]: #{f[Floor]: UnansweredRequest(t, f)}>0 => #{f[Floor]: closesReq(t, f)}=1.
+    !t[Time] f[Floor]: closesReq(t, f) => UnansweredRequest(t, f).
     
     
     //~? floor[Floor]: UnansweredRequest(10, floor).
@@ -149,21 +151,24 @@ Theory T_student:V_student {
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
-    
-    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)              
-    SS=S2
-    
-    model = onemodel(CompleteTheory, SS)
+           
+    SS=S3
+    model = onemodel(CompleteTheory, S1)
     if model == nil then
-        print("failed")
+        print("S1 failed")
+    end
+	model = onemodel(CompleteTheory, S2)
+    if model == nil then
+        print("S2 failed")
+    end
+    
+	model = onemodel(CompleteTheory, SS)
+    if model == nil then
+        print("curent ss failed")
         model = unsatstructure(CompleteTheory, SS)
- 
     else 
         print("sucess")
     end
-    
-
-    
     
     // Printing model 
     print(model)
