@@ -97,10 +97,11 @@ Theory T_student:V_student {
         ! t[Time] f[Floor] f2[Floor]: 
         	CNchange_ElPos(t, f) <- Cchange_ElPos(t, f2) & f ~= f2.
     }
+    
    	{
         // there is a cause to change direction to up if we go where going up and UARequests above
-        ! t[Time] f[Floor] fNow[Floor]: ElDirection(t, up) <- 
-        	reqAbove(t) & ~ElPosition(t) = maxFloor .//& ElPosition(t)=fNow & closesReq(t, f) => f>fNow.
+        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ElPosition(t)=currentFloor  & ~currentFloor = maxFloor &
+        	reqAbove(t) & ((closesReq(t, f) & currentFloor=<f)).
         
         ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(Next(t), down) &
         	reqAbove(t) & ~ElPosition(Next(t)) = maxFloor.
@@ -108,14 +109,17 @@ Theory T_student:V_student {
 
         
         // je mag omlaag gaan als er nog request lager zijn.
-        ! t[Time] : ElDirection(t, down) <- 
+        ! t[Time] : ElDirection(t, down) <- ~ElDirection(t, up) &
         	reqBelow(t) & ~ElPosition(t) = 0.
 
         ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(Next(t), up) &
         	reqBelow(t) & ~ElPosition(Next(t))=0.
-        
+
     }
+    //!t[Time]: #{dir[Direction]: ElDirection(t, dir)} =<1.
     
+    
+    // there are request above/below
     !t[Time]: reqBelow(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
     !t[Time]: reqAbove(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
   
@@ -154,19 +158,25 @@ Theory T_student:V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
            
-    SS=S2
+    SS=S3
     
     model = onemodel(CompleteTheory, S1)
     if model == nil then
         print("S1 failed")
+    else
+        print("S1 succes")        
     end
-    model = onemodel(CompleteTheory, Sb1)
+    model = onemodel(CompleteTheory, S1b)
     if model == nil then
-        print("Sb1 failed")
+        print("S1b failed")
+    else
+        print("S1b succes")   
     end
 	model = onemodel(CompleteTheory, S2)
     if model == nil then
         print("S2 failed")
+    else
+        print("S2 succes")   
     end
     
 	model = onemodel(CompleteTheory, SS)
