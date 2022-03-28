@@ -71,7 +71,7 @@ Theory T_fixed : V_student {
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
 Theory T_student:V_student {
-    maxFloor=5.
+    maxFloor=MAX[:Floor].
     //? t[Time]: ElPosition(t)= ElPosition(Next(t)) & t<8.
     
     {
@@ -98,12 +98,11 @@ Theory T_student:V_student {
         	CNchange_ElPos(t, f) <- Cchange_ElPos(t, f2) & f ~= f2.
     }
    	{
-          
         // there is a cause to change direction to up if we go where going up and UARequests above
-        ! t[Time] f[Floor]: ElDirection(t, up) <- 
-        	reqAbove(t) & ~ElPosition(t) = maxFloor.
+        ! t[Time] f[Floor] fNow[Floor]: ElDirection(t, up) <- 
+        	reqAbove(t) & ~ElPosition(t) = maxFloor .//& ElPosition(t)=fNow & closesReq(t, f) => f>fNow.
         
-        ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down) &
+        ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(Next(t), down) &
         	reqAbove(t) & ~ElPosition(Next(t)) = maxFloor.
         //#{floor[Floor]: UnansweredRequest(Next(t), floor) & floor>ElPosition(Next(t))}>0 & ~ElPosition(Next(t)) = maxFloor.
 
@@ -112,21 +111,24 @@ Theory T_student:V_student {
         ! t[Time] : ElDirection(t, down) <- 
         	reqBelow(t) & ~ElPosition(t) = 0.
 
-        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up) &
+        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(Next(t), up) &
         	reqBelow(t) & ~ElPosition(Next(t))=0.
+        
     }
+    
     !t[Time]: reqBelow(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
     !t[Time]: reqAbove(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
   
     
 	// closest request part
     !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
-    	abs(ElPosition(t)-f) =< abs(ElPosition(t)-f2) => closesReq(t, f).
+    	abs(ElPosition(t)-f) = abs(ElPosition(t)-f2) & f>ElPosition(t) => closesReq(t, f).
+    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
+    	abs(ElPosition(t)-f) < abs(ElPosition(t)-f2) => closesReq(t, f).
     !t[Time]: #{f[Floor]: UnansweredRequest(t, f)}>0 => #{f[Floor]: closesReq(t, f)}=1.
     !t[Time] f[Floor]: closesReq(t, f) => UnansweredRequest(t, f).
     
-    
-    //~? floor[Floor]: UnansweredRequest(10, floor).
+
     // inertia Requests
     {
         ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- I_UAnsweredRequest(t,floor).
@@ -152,10 +154,15 @@ Theory T_student:V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
            
-    SS=S3
+    SS=S2
+    
     model = onemodel(CompleteTheory, S1)
     if model == nil then
         print("S1 failed")
+    end
+    model = onemodel(CompleteTheory, Sb1)
+    if model == nil then
+        print("Sb1 failed")
     end
 	model = onemodel(CompleteTheory, S2)
     if model == nil then
@@ -170,9 +177,7 @@ procedure main() {
         print("sucess")
     end
     
-    // Printing model 
     print(model)
-
     // Visualization
     initVisualization()
     visualizeElevator(model)
