@@ -53,7 +53,9 @@ LTCvocabulary V_student {
     maxFloor: nat 
     reqBelow(Time)
     reqAbove(Time)
-    closesReq(Time, Floor)
+    closesUAReq(Time, Floor)
+    closesUAReqBelow(Time, Floor)
+    closesUAReqAbove(Time, Floor)
     
 }
 
@@ -75,7 +77,7 @@ Theory T_student:V_student {
     //? t[Time]: ElPosition(t)= ElPosition(Next(t)) & t<8.
     
     {
-        ElPosition(Start)= 0.
+        ElPosition(Start) = 0.
         ! floor[Floor] t[Time]: 
         	ElPosition(Next(t)) = floor <- Cchange_ElPos(t, floor).
         ! floor[Floor] t[Time]: 
@@ -101,7 +103,7 @@ Theory T_student:V_student {
    	{
         // there is a cause to change direction to up if we go where going up and UARequests above
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ElPosition(t)=currentFloor  & ~currentFloor = maxFloor &
-        	reqAbove(t) & ((closesReq(t, f) & currentFloor=<f)).
+        	reqAbove(t) & ((closesUAReq(t, f) & currentFloor=<f)).
         
         ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(Next(t), down) &
         	reqAbove(t) & ~ElPosition(Next(t)) = maxFloor.
@@ -109,8 +111,8 @@ Theory T_student:V_student {
 
         
         // je mag omlaag gaan als er nog request lager zijn.
-        ! t[Time] : ElDirection(t, down) <- ~ElDirection(t, up) &
-        	reqBelow(t) & ~ElPosition(t) = 0.
+        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 & 
+        	reqBelow(t) & ((closesUAReq(t, f) & currentFloor>f)).
 
         ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(Next(t), up) &
         	reqBelow(t) & ~ElPosition(Next(t))=0.
@@ -119,18 +121,53 @@ Theory T_student:V_student {
     //!t[Time]: #{dir[Direction]: ElDirection(t, dir)} =<1.
     
     
-    // there are request above/below
-    !t[Time]: reqBelow(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
-    !t[Time]: reqAbove(t) <=> #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
-  
+    {// there are request above/below
+    	!t[Time]: reqBelow(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
+    	!t[Time]: reqAbove(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
+  	}
     
 	// closest request part
-    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
-    	abs(ElPosition(t)-f) = abs(ElPosition(t)-f2) & f>ElPosition(t) => closesReq(t, f).
-    !t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
-    	abs(ElPosition(t)-f) < abs(ElPosition(t)-f2) => closesReq(t, f).
-    !t[Time]: #{f[Floor]: UnansweredRequest(t, f)}>0 => #{f[Floor]: closesReq(t, f)}=1.
-    !t[Time] f[Floor]: closesReq(t, f) => UnansweredRequest(t, f).
+    {// this is easier than having multiple restrictions on closesReq like limiting it to max one 
+        //the closest request is below when there are at least a request below and above with the below to be te closest 
+        !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fBelow) <- 
+        	closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) & 
+            ElPosition(t)-fBelow < fAbove-ElPosition(t).
+        
+        !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fAbove) <- 
+        	closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
+            ElPosition(t)-fBelow > fAbove-ElPosition(t).
+        
+        !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fAbove) <- 
+        	closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
+            ElPosition(t)-fBelow = fAbove-ElPosition(t).
+        
+        //when only one request it is the closest request requist
+        !t[Time] f[Floor]: closesUAReq(t, f) <- UnansweredRequest(t, f) & #{f2[Floor]: UnansweredRequest(t, f2)}=1.
+        
+        //!t[Time] f[Floor] f2[Floor]: UnansweredRequest(t, f) & UnansweredRequest(t, f2) & f~=f2 &
+        //    abs(ElPosition(t)-f) < abs(ElPosition(t)-f2) => closesReq(t, f).
+        //!t[Time]: #{f[Floor]: UnansweredRequest(t, f)}>0 => #{f[Floor]: closesReq(t, f)}=1.
+        //!t[Time] f[Floor]: closesReq(t, f) => UnansweredRequest(t, f).
+    }
+    
+   
+    	//Van alle requiestvloeren onder de huidige is de dichstbijzijnde vloer de closesReqBelow
+    !t[Time] f[Floor]: closesUAReqBelow(t, f) => UnansweredRequest(t, f) & f<ElPosition(t).
+    !t[Time] f[Floor] f2[Floor]: closesUAReqBelow(t, f) & closesUAReqBelow(t, f2) => f=f2.
+    !t[Time] f[Floor]: UnansweredRequest(t, f) & f<ElPosition(t) => #{f2[Floor]: closesUAReqBelow(t, f2)}>0.
+    !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqBelow(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
+        fFar<ElPosition(t) & fClose<ElPosition(t) & fClose>fFar.
+    
+    
+    //this with definitions would make multiple closesUAReqAbove true while we only want one to be true
+    !t[Time] f[Floor]: closesUAReqAbove(t, f) => UnansweredRequest(t, f) & f>ElPosition(t).
+    !t[Time] f[Floor] f2[Floor]: closesUAReqAbove(t, f) & closesUAReqAbove(t, f2) => f=f2.
+    !t[Time] f[Floor]: UnansweredRequest(t, f) & f>ElPosition(t) => #{f2[Floor]: closesUAReqAbove(t, f2)}>0.
+    !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqAbove(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
+        fFar>ElPosition(t) & fClose>ElPosition(t) & fClose<fFar.
+    
+    
+    
     
 
     // inertia Requests
@@ -158,33 +195,124 @@ Theory T_student:V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
            
-    SS=S3
+    SS=S0
+    /*
+    model = onemodel(CompleteTheory, S0)
+    if model == nil then
+        print("S0 FAILED")
+    else
+        print("S0 succes")        
+    end
     
     model = onemodel(CompleteTheory, S1)
     if model == nil then
-        print("S1 failed")
+        print("S1 FAILED")
     else
-        print("S1 succes")        
-    end
-    model = onemodel(CompleteTheory, S1b)
-    if model == nil then
-        print("S1b failed")
-    else
-        print("S1b succes")   
+        print("S1 succes")   
     end
 	model = onemodel(CompleteTheory, S2)
     if model == nil then
-        print("S2 failed")
+        print("S2 FAILED")
     else
         print("S2 succes")   
     end
+    model = onemodel(CompleteTheory, S3)
+    if model == nil then
+        print("S3 FAILED")
+    else
+        print("S3 succes")   
+    end
     
+    model = onemodel(CompleteTheory, S4)
+    if model == nil then
+        print("S4 FAILED")
+    else
+        print("S4 succes")   
+    end
+    
+    model = onemodel(CompleteTheory, S5)
+    if model == nil then
+        print("S5 FAILED")
+    else
+        print("S5 succes")   
+    end
+    
+    model = onemodel(CompleteTheory, S6)
+    if model == nil then
+        print("S6 FAILED")
+    else
+        print("S6 succes")   
+    end
+        
+    model = onemodel(CompleteTheory, S7)
+    if model == nil then
+        print("S7 FAILED")
+    else
+        print("S7 succes")   
+    end
+    
+    model = onemodel(CompleteTheory, S8)
+    if model == nil then
+        print("S8 FAILED")
+    else
+        print("S8 succes")   
+    end
+    */
+    model = onemodel(CompleteTheory, S9)
+    if model == nil then
+        print("S9 FAILED")
+    else
+        print("S9 succes")   
+    end
+        
+    model = onemodel(CompleteTheory, S10)
+    if model == nil then
+        print("S10 FAILED")
+    else
+        print("S10 succes")   
+    end
+    
+    model = onemodel(CompleteTheory, S11)
+    if model == nil then
+        print("S11 FAILED")
+    else
+        print("S11 succes")   
+    end
+    
+        model = onemodel(CompleteTheory, S12)
+    if model == nil then
+        print("S12 FAILED")
+    else
+        print("S12 succes")   
+    end
+    /*
+    model = onemodel(CompleteTheory, S13)
+    if model == nil then
+        print("S13 FAILED")
+    else
+        print("S13 succes")   
+    end
+        
+    model = onemodel(CompleteTheory, S14)
+    if model == nil then
+        print("S14 FAILED")
+    else
+        print("S14 succes")   
+    end
+    
+    model = onemodel(CompleteTheory, S15)
+    if model == nil then
+        print("S15 FAILED")
+    else
+        print("S15 succes")   
+    end
+    */
 	model = onemodel(CompleteTheory, SS)
     if model == nil then
-        print("curent ss failed")
+        print("curent ss FAILED")
         model = unsatstructure(CompleteTheory, SS)
     else 
-        print("sucess")
+        print("curent ss sucess")
     end
     
     print(model)

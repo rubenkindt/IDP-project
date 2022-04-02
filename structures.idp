@@ -3,13 +3,17 @@
 // Make sure your elevator specification handles each of these scenarios correctly.
 // In case you would like to add extra structures, you can do so at the end of this file.
 
+Structure S0:V_student {
+    Time = {0..8}
+    Floor = {0..8}
+    MakeRequest = {0, 4; 6,1; 6,3; 6,4; 6,7; 6,8}
+}
 
 Structure S1:V_student {
     Time = {0..10}
     Floor = {0..5}
-    MakeRequest = {0, 4}
+    MakeRequest = {1, 4}
 }
-
 
 Structure S2:V_student {
     Time = {0..10}
@@ -17,13 +21,11 @@ Structure S2:V_student {
     MakeRequest = {0, 2; 1, 4}
 }
 
-
 Structure S3:V_student {
     Time = {0..15}
     Floor = {0..5}
     MakeRequest = {0, 4; 3, 2}
 }
-
 
 Structure S4:V_student {
     Time = {0..15}
@@ -31,13 +33,11 @@ Structure S4:V_student {
     MakeRequest = {0, 4; 2, 2}
 }
 
-
 Structure S5:V_student {
     Time = {0..20}
     Floor = {0..5}
     MakeRequest = {0, 5; 2, 3; 3, 2; 15, 3}
 }
-
 
 Structure S6:V_student {
     Time = {0..20}
@@ -55,7 +55,33 @@ Structure S7:V_student {
 
 // Feel free to add your own structures here:
 
+Structure S8:V_student {
+    Time = {0..10}
+    Floor = {0..5}
+    MakeRequest = {}
+}
 
 
+Structure S9:V_student {
+    Time = {0..20}
+    Floor = {0..7}
+    MakeRequest = {0, 4; 7, 4; 7, 2; 7, 7}
+}
 
+Structure S10:V_student {
+    Time = {0..20}
+    Floor = {0..7}
+    MakeRequest = {0, 4; 7, 4; 7, 2; 7, 6}
+}
 
+Structure S11:V_student {
+    Time = {0..15}
+    Floor = {0..5}
+    MakeRequest = {0, 2; 1, 3; 8, 2}
+}
+
+Structure S12:V_student {
+    Time = {0..8}
+    Floor = {0..8}
+    MakeRequest = {0, 4; 6,1; 6,3; 6,4; 6,7; 6,8}
+}
