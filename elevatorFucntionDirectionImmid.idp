@@ -35,19 +35,11 @@ LTCvocabulary V_student {
     //fluents
     ElDirection(Time, Direction) // better than ElDirection(Time)=Direction because if will output one of the {up, down} while this is the set of {up, down} which can be the empty set aka waiting
     
-    I_ElDirection(Direction)
     Cchange_ElDirection(Time, Direction)	//cause to change p113
     
-    
-    //I_ElPosition(Floor)			// init floor position of the el
     Cchange_ElPos(Time, Floor)			// cause to position change
-    CNchange_ElPos(Time, Floor)			// cause to position change
-    
-    I_UAnsweredRequest(Time, Floor)
-    C_UAnsweredRequest(Time, Floor)
-    CN_UAnsweredRequest(Time, Floor)
-    
-    //I_Door(Floor)
+    CNchange_ElPos(Time, Floor)			// cause to not position change
+
     Cchange_Door(Time, DoorState)
     CNchange_Door(Time, DoorState)
     
@@ -205,7 +197,6 @@ procedure proveInvariants(){
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     proveInvariants()
-          
      
     SS=S16
     /*
@@ -233,7 +224,7 @@ procedure main() {
     else
         print("S3 succes")   
     end
-    
+    */
     model = onemodel(CompleteTheory, S4)
     if model == nil then
         print("S4 FAILED")
@@ -254,7 +245,7 @@ procedure main() {
     else
         print("S6 succes")   
     end
-    
+    /*
     model = onemodel(CompleteTheory, S7)
     if model == nil then
         print("S7 FAILED")
@@ -275,7 +266,7 @@ procedure main() {
     else
         print("S9 succes")   
     end
-    
+    */
     model = onemodel(CompleteTheory, S10)
     if model == nil then
         print("S10 FAILED")
@@ -324,10 +315,6 @@ procedure main() {
     else
         print("S16 succes")   
     end
-    */
-    
-
-    
     
 	model = onemodel(CompleteTheory, SS)
     if model == nil then

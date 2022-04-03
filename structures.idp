@@ -4,15 +4,15 @@
 // In case you would like to add extra structures, you can do so at the end of this file.
 
 Structure S0:V_student {
-    Time = {0..20}
-    Floor = {0..8}
-    MakeRequest = {0, 3; 3, 1; 4, 7}
+    Time = {0..10}
+    Floor = {0..5}
+    MakeRequest = {}
 }
 
 Structure S0b:V_student {
     Time = {0..20}
-    Floor = {0..8}
-    MakeRequest = {0, 8; 8, 3; 3, 2; 3, 7}
+    Floor = {0..5}
+    MakeRequest = {0,1}
 }
 
 Structure S1:V_student {
@@ -60,13 +60,11 @@ Structure S7:V_student {
 
 
 // Feel free to add your own structures here:
-
 Structure S8:V_student {
-    Time = {0..10}
-    Floor = {0..5}
-    MakeRequest = {}
+    Time = {0..20}
+    Floor = {0..8}
+    MakeRequest = {0, 3; 3, 1; 4, 7}
 }
-
 
 Structure S9:V_student {
     Time = {0..20}
@@ -106,8 +104,8 @@ Structure S14:V_student {
 
 Structure S15:V_student {
     Time = {0..20}
-    Floor = {0..5}
-    MakeRequest = {0,1}
+    Floor = {0..8}
+    MakeRequest = {0, 8; 8, 3; 3, 2; 3, 7}
 }
 
 Structure S16:V_student {
