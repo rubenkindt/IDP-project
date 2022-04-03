@@ -44,8 +44,8 @@ LTCvocabulary V_student {
     CNchange_Door(Time, DoorState)
     
     AnswerRequest(Time, Floor)
-    waiting(Time)
-	
+
+    
     maxFloor: Floor 
     
     reqBelow(Time)
@@ -99,14 +99,14 @@ Theory T_student:V_student {
         	((closesUAReq(t, f) & currentFloor<f)).
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
-        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  &
+        ! t[Time]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  &
         	~ElPosition(Next(t)) = maxFloor & reqAbove(Next(t)).
         
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
         
-        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
+        ! t[Time]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
         	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
 	}
     
@@ -121,8 +121,8 @@ Theory T_student:V_student {
         ! t[Time] d[DoorState] d2[DoorState]: 
         	CNchange_Door(t, d) <- Cchange_Door(t, d2) & d ~= d2.
         
-        ! t[Time] floor[Floor]:
-	        AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
+        //! t[Time] floor[Floor]:
+	    //    AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
     }
     {
         ElDoorState(Start) = Closed.
