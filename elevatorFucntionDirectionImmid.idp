@@ -55,7 +55,6 @@ LTCvocabulary V_student {
     waiting(Time)
 	
     maxFloor: Floor 
-    maxTime: Time
     
     reqBelow(Time)
     reqAbove(Time)
@@ -173,26 +172,20 @@ Theory T_student:V_student {
 
     // inertia Requests
     {
-        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- I_UAnsweredRequest(t,floor).
+        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
         ! floor[Floor] t[Time]: 
-        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).//~CN_UAnsweredRequest(t, floor).
-    }
-    {
-        ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
-        ! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.
-        
+        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & 
+        	~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).
     }
     
 }
 
 //If elevator moves the doors are closed !
 theory move_inv: V_student{
-    maxTime = MAX[:Time].
-    !t[Time] f[Floor] f2[Floor]: t<maxTime & ElPosition(t)=f & ElPosition(Next(t))=f2 & f~=f2 => ElDoorState(t) = Closed.
+    !t[Time] f[Floor]: Cchange_ElPos(t, f) => ElDoorState(t) = Closed.
 }
 // Doors are never open if there is no call waiting on that floor !
 theory door_inv: V_student{
-    maxTime = MAX[:Time].
     !t[Time] f[Floor]: ElPosition(t)=f & ~UnansweredRequest(t,f)=> ElDoorState(t) = Closed.
 }
 Structure S_Inv:V_student{
@@ -201,6 +194,7 @@ Structure S_Inv:V_student{
 	Start = 0
 }
 procedure proveInvariants(){
+    print("inv")
 	print(isinvariant(T_student,move_inv,S_Inv))
 	print(isinvariant(T_student,door_inv,S_Inv))
 }
@@ -210,7 +204,9 @@ procedure proveInvariants(){
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
+    proveInvariants()
           
+     
     SS=S16
     /*
     model = onemodel(CompleteTheory, S0)
@@ -329,6 +325,8 @@ procedure main() {
         print("S16 succes")   
     end
     */
+    
+
     
     
 	model = onemodel(CompleteTheory, SS)
