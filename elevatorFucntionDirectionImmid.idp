@@ -55,6 +55,8 @@ LTCvocabulary V_student {
     waiting(Time)
 	
     maxFloor: Floor 
+    maxTime: Time
+    
     reqBelow(Time)
     reqAbove(Time)
     closesUAReq(Time, Floor)
@@ -100,31 +102,6 @@ Theory T_student:V_student {
         ! t[Time] f[Floor] f2[Floor]: 
         	CNchange_ElPos(t, f) <- Cchange_ElPos(t, f2) & f ~= f2.
     }
-    
-    {
-        ElDoorState(Start) = Closed.
-        ! d[DoorState] t[Time]: 
-        	ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
-        ! d[DoorState] t[Time]: 
-        	ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
-    }
-    
-    {//doors
-        ! t[Time] floor[Floor]: 
-        	Cchange_Door(t, Open)   <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Closed.
-        ! t[Time] floor[Floor]: 
-        	Cchange_Door(t, Closed) <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Open.
-        
-        // cause not no change the door is whan no change occures.
-        ! t[Time] d[DoorState] d2[DoorState]: 
-        	CNchange_Door(t, d) <- Cchange_Door(t, d2) & d ~= d2.
-        
-        ! t[Time] floor[Floor]:
-	        AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
-        
-    }
-    
-
    	{
         //We can change directions to up when we are not going down, not at the highest floor and the closest requiest is above.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
@@ -137,9 +114,32 @@ Theory T_student:V_student {
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
+        
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
+        	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
 	}
-    //!t[Time]: #{dir[Direction]: ElDirection(t, dir)} =<1.
     
+       
+    {//doors
+        ! t[Time] floor[Floor]: 
+        	Cchange_Door(t, Open)   <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Closed.
+        ! t[Time] floor[Floor]: 
+        	Cchange_Door(t, Closed) <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Open.
+        
+        // cause not no change the door is whan no change occures.
+        ! t[Time] d[DoorState] d2[DoorState]: 
+        	CNchange_Door(t, d) <- Cchange_Door(t, d2) & d ~= d2.
+        
+        ! t[Time] floor[Floor]:
+	        AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
+    }
+    {
+        ElDoorState(Start) = Closed.
+        ! d[DoorState] t[Time]: 
+        	ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
+        ! d[DoorState] t[Time]: 
+        	ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
+    }
     
     {// there are request above/below
     	!t[Time]: reqBelow(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
@@ -175,7 +175,7 @@ Theory T_student:V_student {
     {
         ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- I_UAnsweredRequest(t,floor).
         ! floor[Floor] t[Time]: 
-        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~CN_UAnsweredRequest(t, floor).
+        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).//~CN_UAnsweredRequest(t, floor).
     }
     {
         ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
@@ -185,13 +185,33 @@ Theory T_student:V_student {
     
 }
 
+//If elevator moves the doors are closed !
+theory move_inv: V_student{
+    maxTime = MAX[:Time].
+    !t[Time] f[Floor] f2[Floor]: t<maxTime & ElPosition(t)=f & ElPosition(Next(t))=f2 & f~=f2 => ElDoorState(t) = Closed.
+}
+// Doors are never open if there is no call waiting on that floor !
+theory door_inv: V_student{
+    maxTime = MAX[:Time].
+    !t[Time] f[Floor]: ElPosition(t)=f & ~UnansweredRequest(t,f)=> ElDoorState(t) = Closed.
+}
+Structure S_Inv:V_student{
+	Time = {0..20}
+	Floor = {0..5}
+	Start = 0
+}
+procedure proveInvariants(){
+	print(isinvariant(T_student,move_inv,S_Inv))
+	print(isinvariant(T_student,door_inv,S_Inv))
+}
+
 
 // MAIN PROCEDURE
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
           
-    SS=S5
+    SS=S16
     /*
     model = onemodel(CompleteTheory, S0)
     if model == nil then
