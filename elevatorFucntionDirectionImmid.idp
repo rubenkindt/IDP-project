@@ -39,15 +39,19 @@ LTCvocabulary V_student {
     Cchange_ElDirection(Time, Direction)	//cause to change p113
     
     
-    I_ElPosition(Floor)			// init floor position of the el
+    //I_ElPosition(Floor)			// init floor position of the el
     Cchange_ElPos(Time, Floor)			// cause to position change
     CNchange_ElPos(Time, Floor)			// cause to position change
-    
     
     I_UAnsweredRequest(Time, Floor)
     C_UAnsweredRequest(Time, Floor)
     CN_UAnsweredRequest(Time, Floor)
     
+    //I_Door(Floor)
+    Cchange_Door(Time, DoorState)
+    CNchange_Door(Time, DoorState)
+    
+    AnswerRequest(Time, Floor)
     waiting(Time)
 	
     maxFloor: Floor 
@@ -56,7 +60,6 @@ LTCvocabulary V_student {
     closesUAReq(Time, Floor)
     closesUAReqBelow(Time, Floor)
     closesUAReqAbove(Time, Floor)
-    
 }
 
 // TIME THEORY
@@ -84,10 +87,10 @@ Theory T_student:V_student {
     }
     {
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up) & ~ElDirection(t, down).
+        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up) & ~ElDirection(t, down) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
         
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down) & ~ElDirection(t, up).
+        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down) & ~ElDirection(t, up) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
         
        /* ! floor[Floor] t[Time]: 
         	Cchange_ElPos(t, floor + 0) <- ElPosition(t) = floor & ElDirection(t) = none.
@@ -98,6 +101,30 @@ Theory T_student:V_student {
         	CNchange_ElPos(t, f) <- Cchange_ElPos(t, f2) & f ~= f2.
     }
     
+    {
+        ElDoorState(Start) = Closed.
+        ! d[DoorState] t[Time]: 
+        	ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
+        ! d[DoorState] t[Time]: 
+        	ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
+    }
+    
+    {//doors
+        ! t[Time] floor[Floor]: 
+        	Cchange_Door(t, Open)   <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Closed.
+        ! t[Time] floor[Floor]: 
+        	Cchange_Door(t, Closed) <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Open.
+        
+        // cause not no change the door is whan no change occures.
+        ! t[Time] d[DoorState] d2[DoorState]: 
+        	CNchange_Door(t, d) <- Cchange_Door(t, d2) & d ~= d2.
+        
+        ! t[Time] floor[Floor]:
+	        AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
+        
+    }
+    
+
    	{
         //We can change directions to up when we are not going down, not at the highest floor and the closest requiest is above.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
@@ -110,11 +137,7 @@ Theory T_student:V_student {
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
-
-        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
-        	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
-
-    }
+	}
     //!t[Time]: #{dir[Direction]: ElDirection(t, dir)} =<1.
     
     
@@ -156,7 +179,7 @@ Theory T_student:V_student {
     }
     {
         ! floor[Floor] t[Time]: I_UAnsweredRequest(t, floor) <- MakeRequest(t,floor).
-        ! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor.
+        ! floor[Floor] t[Time]: CN_UAnsweredRequest(t, floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.
         
     }
     
@@ -201,7 +224,7 @@ procedure main() {
     else
         print("S4 succes")   
     end
-    
+
     model = onemodel(CompleteTheory, S5)
     if model == nil then
         print("S5 FAILED")
@@ -236,7 +259,7 @@ procedure main() {
     else
         print("S9 succes")   
     end
-        
+    
     model = onemodel(CompleteTheory, S10)
     if model == nil then
         print("S10 FAILED")
@@ -272,13 +295,22 @@ procedure main() {
         print("S14 succes")   
     end
     
-    model = onemodel(CompleteTheory, S15)
+	model = onemodel(CompleteTheory, S15)
     if model == nil then
         print("S15 FAILED")
     else
         print("S15 succes")   
     end
+    
+    model = onemodel(CompleteTheory, S16)
+    if model == nil then
+        print("S16 FAILED")
+    else
+        print("S16 succes")   
+    end
     */
+    
+    
 	model = onemodel(CompleteTheory, SS)
     if model == nil then
         print("curent ss FAILED")
@@ -311,7 +343,6 @@ procedure main( ) {
 	end
 }
 */
-
 
 // File responsible for visualization  
 include "visualize_elevator.idp"
