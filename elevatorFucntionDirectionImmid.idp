@@ -50,7 +50,7 @@ LTCvocabulary V_student {
     
     waiting(Time)
 	
-    maxFloor: nat 
+    maxFloor: Floor 
     reqBelow(Time)
     reqAbove(Time)
     closesUAReq(Time, Floor)
@@ -85,10 +85,10 @@ Theory T_student:V_student {
     }
     {
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up).
+        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up) & ~ElDirection(t, down).
         
         ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down).
+        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down) & ~ElDirection(t, up).
         
         
        /* ! floor[Floor] t[Time]: 
@@ -102,20 +102,23 @@ Theory T_student:V_student {
     
    	{
         // there is a cause to change direction to up if we go where going up and UARequests above
-        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ElPosition(t)=currentFloor  & ~currentFloor = maxFloor &
-        	reqAbove(t) & ((closesUAReq(t, f) & currentFloor=<f)).
+        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
+        	((closesUAReq(t, f) & currentFloor<f)).
         
-        ! t[Time] f[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(Next(t), down) &
-        	reqAbove(t) & ~ElPosition(Next(t)) = maxFloor.
-        //#{floor[Floor]: UnansweredRequest(Next(t), floor) & floor>ElPosition(Next(t))}>0 & ~ElPosition(Next(t)) = maxFloor.
-
+        //! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
+        //	~reqBelow(t).
+        
+        
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  &
+        	~ElPosition(Next(t)) = maxFloor & reqAbove(Next(t)) .//ElPosition(t)=currentFloor & ((closesUAReq(t, f) & currentFloor=<f)).
+        
         
         // je mag omlaag gaan als er nog request lager zijn.
-        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 & 
-        	reqBelow(t) & ((closesUAReq(t, f) & currentFloor>f)).
+        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
+        	 ((closesUAReq(t, f) & currentFloor>f)).
 
-        ! t[Time] : ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(Next(t), up) &
-        	reqBelow(t) & ~ElPosition(Next(t))=0.
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
+        	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
 
     }
     //!t[Time]: #{dir[Direction]: ElDirection(t, dir)} =<1.
@@ -126,7 +129,7 @@ Theory T_student:V_student {
     	!t[Time]: reqAbove(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
   	}
     
-	// closest request part
+	/* closest request part
     {// this is easier than having multiple restrictions on closesReq like limiting it to max one 
         //the closest request is below when there are at least a request below and above with the below to be te closest 
         !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fBelow) <- 
@@ -149,6 +152,15 @@ Theory T_student:V_student {
         //!t[Time]: #{f[Floor]: UnansweredRequest(t, f)}>0 => #{f[Floor]: closesReq(t, f)}=1.
         //!t[Time] f[Floor]: closesReq(t, f) => UnansweredRequest(t, f).
     }
+    */
+     	//Van alle requiestvloeren onder de huidige is de dichstbijzijnde vloer de closesReqBelow
+    !t[Time] f[Floor]: closesUAReq(t, f) => closesUAReqBelow(t, f) | closesUAReqAbove(t, f).
+    !t[Time] f[Floor] f2[Floor]: closesUAReq(t, f) & closesUAReq(t, f2) => f=f2.
+    !t[Time] f[Floor]: closesUAReqBelow(t, f) | closesUAReqAbove(t, f) => #{f2[Floor]: closesUAReq(t, f2)}>0.
+    !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fBelow) <= closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
+        ElPosition(t)-fBelow<fAbove-ElPosition(t).
+    !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fAbove) <= closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
+        ElPosition(t)-fBelow>=fAbove-ElPosition(t).
     
    
     	//Van alle requiestvloeren onder de huidige is de dichstbijzijnde vloer de closesReqBelow
@@ -194,28 +206,27 @@ Theory T_student:V_student {
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
-           
-    SS=S0
+          
+    SS=S5
     /*
     model = onemodel(CompleteTheory, S0)
     if model == nil then
         print("S0 FAILED")
     else
         print("S0 succes")        
-    end
-    
+    end    
     model = onemodel(CompleteTheory, S1)
     if model == nil then
         print("S1 FAILED")
     else
         print("S1 succes")   
-    end
+    end    
 	model = onemodel(CompleteTheory, S2)
     if model == nil then
         print("S2 FAILED")
     else
         print("S2 succes")   
-    end
+    end    
     model = onemodel(CompleteTheory, S3)
     if model == nil then
         print("S3 FAILED")
@@ -243,7 +254,7 @@ procedure main() {
     else
         print("S6 succes")   
     end
-        
+    
     model = onemodel(CompleteTheory, S7)
     if model == nil then
         print("S7 FAILED")
@@ -257,7 +268,7 @@ procedure main() {
     else
         print("S8 succes")   
     end
-    */
+    
     model = onemodel(CompleteTheory, S9)
     if model == nil then
         print("S9 FAILED")
@@ -279,13 +290,13 @@ procedure main() {
         print("S11 succes")   
     end
     
-        model = onemodel(CompleteTheory, S12)
+	model = onemodel(CompleteTheory, S12)
     if model == nil then
         print("S12 FAILED")
     else
         print("S12 succes")   
     end
-    /*
+    
     model = onemodel(CompleteTheory, S13)
     if model == nil then
         print("S13 FAILED")
@@ -310,15 +321,20 @@ procedure main() {
 	model = onemodel(CompleteTheory, SS)
     if model == nil then
         print("curent ss FAILED")
-        model = unsatstructure(CompleteTheory, SS)
+        explainunsat(CompleteTheory, SS)
+        print("temp")
+        print(explainunsat(CompleteTheory, SS))
+        //model = unsatstructure(CompleteTheory, SS)
+        print("curent ss FAILED")
+        
     else 
         print("curent ss sucess")
+    	print(model)
+    	// Visualization
+    	initVisualization()
+    	visualizeElevator(model)
     end
     
-    print(model)
-    // Visualization
-    initVisualization()
-    visualizeElevator(model)
 }
 
 /*

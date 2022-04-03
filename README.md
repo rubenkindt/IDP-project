@@ -56,7 +56,6 @@ no door change and floor change in the same time unit
 
 MakeRequest(t, f ) should only take effect if UnansweredRequest(t, f ) does not hold
 
-
 #waiting then request on current floor
 keep current direction 
 
@@ -77,5 +76,9 @@ direction up handle current floor -> handle above requests -> handle below
 -added with the correct time
 -continue in time
 -approved and removed in next time unit
+
+#when can you change directions
+standing still -> request
+on other requests in current direction
 
 
