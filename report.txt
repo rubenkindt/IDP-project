@@ -1,4 +1,30 @@
+Report for the course Modelling of Complex Systems (B-KUL-H0N05A) of the KULeuven, Belgium in the education Master Computerwetenschappen by
+Ruben Kindt r0656495
 
+    type Direction constructed from {up, down}
+
+-    ElDirection(Time, Direction) is true iff at time Time the elevator has a direction Direction
+-    Cchange_ElDirection(Time, Direction) is true iff at time Time the elevator has a reason to change direction Direction
+
+-    Cchange_ElPos(Time, Floor) is true iff at time Time the elevator has a reason to change position to floor Floor
+-    CNchange_ElPos(Time, Floor) is true iff at time Time the elevator has no reason to change position to floor Floor
+
+-    Cchange_Door(Time, DoorState) is true iff at time Time the elevator has a reason to change its door Door
+-    CNchange_Door(Time, DoorState) is true iff at time Time the elevator has no reason to change its door Door
+
+-    AnswerRequest(Time, Floor) is true iff at time Time the elevator answered a request at floor Floor, currently not used but I predict I will need it at the exam
+
+-    maxFloor: Floor is a function that always returns the highest floor Floor, used to limit the elevators reach
+
+-    reqBelow(Time) is true iff at time Time there is an unanswered request below the elevator.
+-    reqAbove(Time) is true iff at time Time there is an unanswered request above the elevator.
+-    closesUAReq(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request.
+-    closesUAReqBelow(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request below the elevator.
+-    closesUAReqAbove(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request above the elevator.
+
+hours spend: 30h
 
 Major revision: no
-only removing an olddated formula 
+only removed an outdated formula
+
+Did have multiple major revision in the first 6 hours of the project, way before attempting the invariants.
