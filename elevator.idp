@@ -96,7 +96,7 @@ Theory T_student:V_student {
    	{
         //We can change directions to up when we are not going down, not at the highest floor and the closest requiest is above.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
-        	((closesUAReq(t, f) & currentFloor<f)).
+        	((closesUAReq(t, f) & currentFloor=<f)).
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
         ! t[Time]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  &
@@ -156,11 +156,11 @@ Theory T_student:V_student {
     
     
     //this with definitions would make multiple closesUAReqAbove true while we only want one to be true
-    !t[Time] f[Floor]: closesUAReqAbove(t, f) => UnansweredRequest(t, f) & f>ElPosition(t).
+    !t[Time] f[Floor]: closesUAReqAbove(t, f) => UnansweredRequest(t, f) & f>=ElPosition(t).
     !t[Time] f[Floor] f2[Floor]: closesUAReqAbove(t, f) & closesUAReqAbove(t, f2) => f=f2.
-    !t[Time] f[Floor]: UnansweredRequest(t, f) & f>ElPosition(t) => #{f2[Floor]: closesUAReqAbove(t, f2)}>0.
+    !t[Time] f[Floor]: UnansweredRequest(t, f) & f>=ElPosition(t) => #{f2[Floor]: closesUAReqAbove(t, f2)}>0.
     !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqAbove(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
-        fFar>ElPosition(t) & fClose>ElPosition(t) & fClose<fFar.
+        fFar>=ElPosition(t) & fClose>=ElPosition(t) & fClose<fFar.
 
     // inertia Requests
     {
@@ -199,7 +199,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, S1)
+    model = onemodel(CompleteTheory, S20)
     
     // Printing model 
     print(model)

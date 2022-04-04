@@ -113,3 +113,27 @@ Structure S16:V_student {
     Floor = {0..7}
     MakeRequest = {0, 2; 2, 1; 3, 4}
 }
+
+Structure S17:V_student {
+    Time = {0..20}
+    Floor = {0..5}
+    MakeRequest = {0, 3; 4, 2; 6, 3; 6, 0}
+}
+
+Structure S18:V_student {
+    Time = {0..20}
+    Floor = {0..5}
+    MakeRequest = {3, 3}
+}
+
+Structure S19:V_student {
+    Time = {0..70}
+    Floor = {0..8}
+    MakeRequest = {1,1; 6,2; 9,1; 9,4; 16,0; 16,6; 29,3; 32,4; 32,1; 41,3; 41,5; 45,4; 45,6; 52,5; 57,4; 62,2; 64,3}
+}
+
+Structure S20:V_student {
+    Time = {0..20}
+    Floor = {0..8}
+    MakeRequest = {0,4; 6,2; 6,3; 6,6; 18,0; 18,3; 18,4; 18,5; 18,6; 18,7}
+}
