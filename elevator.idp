@@ -169,7 +169,12 @@ Theory T_student:V_student {
     }
     
 }
+//TESTING: for all timepoints: the el can not have both directions to be true
+theory dir_inv: V_student{
+    !t[Time]: ~(ElDirection(t, up) & ElDirection(t, down)).
+}
 
+//ASSIGNMENT:
 //If elevator moves the doors are closed !
 theory move_inv: V_student{
     !t[Time] f[Floor]: Cchange_ElPos(t, f) => ElDoorState(t) = Closed.
@@ -185,6 +190,7 @@ Structure S_Inv:V_student{
 }
 procedure proveInvariants(){
     print("inv")
+    //print(isinvariant(T_student,dir_inv,S_Inv)) //Some Test
 	print(isinvariant(T_student,move_inv,S_Inv))
 	print(isinvariant(T_student,door_inv,S_Inv))
 }
