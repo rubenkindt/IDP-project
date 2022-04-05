@@ -162,7 +162,8 @@ Theory T_student:V_student {
 
     // inertia Requests
     {
-        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
+        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor) & UnansweredRequest(t, floor).
+        //! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
         ! floor[Floor] t[Time]: 
         	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & 
         	~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).
