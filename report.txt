@@ -4,7 +4,6 @@ Ruben Kindt r0656495
     type Direction constructed from {up, down}
 
 -    ElDirection(Time, Direction) is true iff at time Time the elevator has a direction Direction
--    Cchange_ElDirection(Time, Direction) is true iff at time Time the elevator has a reason to change direction Direction
 
 -    Cchange_ElPos(Time, Floor) is true iff at time Time the elevator has a reason to change position to floor Floor
 -    CNchange_ElPos(Time, Floor) is true iff at time Time the elevator has no reason to change position to floor Floor

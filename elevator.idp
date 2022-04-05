@@ -35,8 +35,6 @@ LTCvocabulary V_student {
     //fluents
     ElDirection(Time, Direction) // better than ElDirection(Time)=Direction because if will output one of the {up, down} while this is the set of {up, down} which can be the empty set aka waiting
     
-    Cchange_ElDirection(Time, Direction)	//cause to change p113
-    
     Cchange_ElPos(Time, Floor)			// cause to position change
     CNchange_ElPos(Time, Floor)			// cause to not position change
 
@@ -99,15 +97,15 @@ Theory T_student:V_student {
         	((closesUAReq(t, f) & currentFloor=<f)).
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
-        ! t[Time]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  &
-        	~ElPosition(Next(t)) = maxFloor & reqAbove(Next(t)).
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & ElPosition(Next(t))=currentFloor & 
+        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | UnansweredRequest(Next(t), currentFloor)).
         
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
         
-        ! t[Time]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  &
-        	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & ElPosition(Next(t))=currentFloor & 
+        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | UnansweredRequest(Next(t), currentFloor)).
 	}
     
        
@@ -199,7 +197,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, S20)
+    model = onemodel(CompleteTheory, S1)
     
     // Printing model 
     print(model)
