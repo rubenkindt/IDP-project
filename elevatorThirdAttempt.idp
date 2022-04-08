@@ -42,7 +42,6 @@ LTCvocabulary V_student {
     CNchange_Door(Time, DoorState)
     
     AnswerRequest(Time, Floor)
-	I_UnansweredRequest(Time, Floor)
 
     
     maxFloor: Floor 
@@ -99,14 +98,14 @@ Theory T_student:V_student {
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
         ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & ElPosition(Next(t))=currentFloor & 
-        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | Time(Next(t)) => UnansweredRequest(Next(t), currentFloor)).
+        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | UnansweredRequest(Next(t), currentFloor)).
         
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
         
         ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & ElPosition(Next(t))=currentFloor & 
-        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | Time(Next(t)) => UnansweredRequest(Next(t), currentFloor)).
+        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | UnansweredRequest(Next(t), currentFloor)).
 	}
     
        
@@ -163,13 +162,11 @@ Theory T_student:V_student {
 
     // inertia Requests
     {
-        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor).
+       // ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor) & UnansweredRequest(t, floor).
+        ! floor[Floor] t[Time]: UnansweredRequest(t, floor) <- MakeRequest(t,floor).
         ! floor[Floor] t[Time]: 
         	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & 
         	~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).
-    }
-    {
-        !t[Time] f[Floor]: I_UnansweredRequest(t,f) <- MakeRequest(t,f) & ~UnansweredRequest(t, f).
     }
     
 }
@@ -201,11 +198,13 @@ procedure proveInvariants(){
 
 
 // MAIN PROCEDURE
+// If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
-	//proveInvariants()
+	proveInvariants()
     local CompleteTheory = merge(T_fixed, T_student) 
-        
-    model = onemodel(CompleteTheory, SUpClosestUpTGreen) //<######################################################################
+    
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
+    model = onemodel(CompleteTheory, S1)
     
     // Printing model 
     print(model)
