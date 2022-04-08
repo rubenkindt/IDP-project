@@ -10,9 +10,9 @@ Structure S0:V_student {
 }
 
 Structure S0b:V_student {
-    Time = {0..20}
+    Time = {0..10}
     Floor = {0..5}
-    MakeRequest = {0,1}
+    MakeRequest = {1,1}
 }
 
 Structure S1:V_student {
@@ -142,4 +142,10 @@ Structure S21:V_student {
     Time = {0..35}
     Floor = {0..8}
     MakeRequest = {0,4; 8,3; 8,6; 18,4; 18,7; 27,3; 27,5}
+}
+
+Structure SUpClosestUpTGreen:V_student {
+    Time = {0..20}
+    Floor = {0..8}
+    MakeRequest = {0,3; 3,2; 3,5}
 }
