@@ -98,15 +98,15 @@ Theory T_student:V_student {
         	((closesUAReq(t, f) & currentFloor=<f)).
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
-        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & ElPosition(Next(t))=currentFloor & 
-        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | Time(Next(t)) => UnansweredRequest(Next(t), currentFloor)).
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & 
+        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t))))).
         
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
         ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
         	 ((closesUAReq(t, f) & currentFloor>f)).
         
-        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & ElPosition(Next(t))=currentFloor & 
-        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | Time(Next(t)) => UnansweredRequest(Next(t), currentFloor)).
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & 
+        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t))))).
 	}
     
        
@@ -205,7 +205,7 @@ procedure main() {
 	//proveInvariants()
     local CompleteTheory = merge(T_fixed, T_student) 
         
-    model = onemodel(CompleteTheory, SUpClosestUpTGreen) //<######################################################################
+    model = onemodel(CompleteTheory, S19) //<######################################################################
     
     // Printing model 
     print(model)
