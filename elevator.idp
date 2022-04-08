@@ -28,12 +28,9 @@ LTCvocabulary V_fixed {
 LTCvocabulary V_student {
     extern vocabulary V_fixed
     type Direction constructed from {up, down}
-    //did not decide for a none direction, since it is not a direction and waiting should prevent moving in a direction and not be a direction itself
-    //If none was a direction should not interfear with 
-    	//only up<->down changes take a time unit
-    		//none should not be added because it is not a 
+
     //fluents
-    ElDirection(Time, Direction) // better than ElDirection(Time)=Direction because if will output one of the {up, down} while this is the set of {up, down} which can be the empty set aka waiting
+    ElDirection(Time, Direction)
     
     Cchange_ElPos(Time, Floor)			// cause to position change
     CNchange_ElPos(Time, Floor)			// cause to not position change
@@ -45,11 +42,11 @@ LTCvocabulary V_student {
     
     maxFloor: Floor 
     
-    reqBelow(Time)
-    reqAbove(Time)
-    closesUAReq(Time, Floor)
-    closesUAReqBelow(Time, Floor)
-    closesUAReqAbove(Time, Floor)
+    reqBelow(Time) //True if UA req below
+    reqAbove(Time) //True if UA req below
+    closesUAReq(Time, Floor) //True if at Time the closest floor is Floor
+    closesUAReqBelow(Time, Floor) //True if at Time the closest floor below is Floor
+    closesUAReqAbove(Time, Floor) //True if at Time the closest floor above is Floor
 }
 
 // TIME THEORY
@@ -61,7 +58,6 @@ Theory T_fixed : V_student {
         ! t: Next(t) = t+1 <- Time(t+1).
     }
 }
-
 
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
@@ -189,6 +185,7 @@ Theory T_student:V_student {
         ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~AnsweredRequest(Next(t), floor).
     }    
 }
+
 //for testing: for all timepoints: the el can not have both directions to be true
 theory dir_inv: V_student{
     !t[Time]: ~(ElDirection(t, up) & ElDirection(t, down)).
@@ -210,11 +207,10 @@ Structure S_Inv:V_student{
 }
 procedure proveInvariants(){
     print("inv")
-    print(isinvariant(T_student,dir_inv,S_Inv)) //Some Test
-	print(isinvariant(T_student,move_inv,S_Inv))
-	print(isinvariant(T_student,door_inv,S_Inv))
+    print("Direction Invariant: ", isinvariant(T_student,dir_inv,S_Inv)) //Some Test
+	print("Move Invariant: ",isinvariant(T_student,move_inv,S_Inv))
+	print("Door Invariant: ",isinvariant(T_student,door_inv,S_Inv))
 }
-
 
 // MAIN PROCEDURE
 procedure main() {
