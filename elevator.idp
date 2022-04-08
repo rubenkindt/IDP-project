@@ -41,9 +41,7 @@ LTCvocabulary V_student {
     Cchange_Door(Time, DoorState)
     CNchange_Door(Time, DoorState)
     
-    AnswerRequest(Time, Floor)
-	I_UnansweredRequest(Time, Floor)
-
+    AnsweredRequest(Time, Floor)
     
     maxFloor: Floor 
     
@@ -78,102 +76,120 @@ Theory T_student:V_student {
         	ElPosition(Next(t)) = floor <- ElPosition(t) = floor & ~CNchange_ElPos(t, floor) .
     }
     {
-        ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & ElDirection(t, up) & ~ElDirection(t, down) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
+        // cause to go up a floor is: that the direction is up, not down, door is closed and we are not handling a request atm
+        ! floor[Floor] t[Time]: Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & 
+        	ElDirection(t, up) & ~ElDirection(t, down) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
         
-        ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & ElDirection(t, down) & ~ElDirection(t, up) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
-        
-       /* ! floor[Floor] t[Time]: 
-        	Cchange_ElPos(t, floor + 0) <- ElPosition(t) = floor & ElDirection(t) = none.
-        */
-        
-        // cause not no change is whan no change occures.
+        //analoge
+        ! floor[Floor] t[Time]: Cchange_ElPos(t, floor - 1) <- ElPosition(t) = floor & 
+        	ElDirection(t, down) & ~ElDirection(t, up) & ElDoorState(t) = Closed & ~UnansweredRequest(t, floor).
+       
+        // cause not no change floor is when no change occures.
         ! t[Time] f[Floor] f2[Floor]: 
         	CNchange_ElPos(t, f) <- Cchange_ElPos(t, f2) & f ~= f2.
     }
    	{
-        //We can change directions to up when we are not going down, not at the highest floor and the closest requiest is above.
-        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ElPosition(t)=currentFloor & ~currentFloor = maxFloor &
-        	((closesUAReq(t, f) & currentFloor=<f)).
+      //We can change directions to up when we are not going down, not at the highest floor and the closest requiest is above of here.
+        ! t[Time] f[Floor]: ElDirection(t, up) <- ~ElDirection(t, down) & ~ElPosition(t) = maxFloor &
+        	closesUAReq(t, f) & ElPosition(t)=<f.
         
         //we keep going up if we were going up, not going down, not at the higest floor and there is sill a request above
         ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & 
-        	~ElPosition(Next(t)) = maxFloor & (reqAbove(Next(t)) | (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t))))).
+        	~ElPosition(Next(t)) = maxFloor & reqAbove(Next(t)).
+        
+        //we keep going up if we were going up, not going down, 
+        //and the next timpoint not at the higest floor and there is sill a request above or here
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), up) <- ElDirection(t, up) & ~ElDirection(t, down)  & 
+        	~ElPosition(Next(t)) = maxFloor & (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t)))).
         
         //We can change directions to down when we are not going up, not at the lowest floor and the closest requiest is below.
-        ! t[Time] currentFloor[Floor] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ElPosition(t)=currentFloor & ~ElPosition(t) = 0 &
-        	 ((closesUAReq(t, f) & currentFloor>f)).
+        ! t[Time] f[Floor]: ElDirection(t, down) <- ~ElDirection(t, up) & ~ElPosition(t) = 0 & closesUAReq(t, f) & ElPosition(t)>f.
         
+        //we keep going down if we were going down, not going up, not at the lowest floor and there is sill a request below
         ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & 
-        	 ~ElPosition(Next(t))=0 & (reqBelow(Next(t)) | (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t))))).
+        	 ~ElPosition(Next(t))=0 & reqBelow(Next(t)).
+        
+        //we keep going down if we were going down, not going up, 
+        //and the next timpoint not at the lowest floor and there is sill a request below or here
+        ! t[Time] currentFloor[Floor]: ElDirection(Next(t), down) <- ElDirection(t, down) & ~ElDirection(t, up)  & 
+        	 ~ElPosition(Next(t))=0 & (Time(Next(t)) => UnansweredRequest(Next(t), ElPosition(Next(t)))).
 	}
     
        
     {//doors
-        ! t[Time] floor[Floor]: 
-        	Cchange_Door(t, Open)   <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Closed.
-        ! t[Time] floor[Floor]: 
-        	Cchange_Door(t, Closed) <- ElPosition(t) = floor & UnansweredRequest(t, floor) & ElDoorState(t) = Open.
+        //cause to open a door is that there is an UA request and the door was closed
+        ! t[Time]: Cchange_Door(t, Open)   <- UnansweredRequest(t, ElPosition(t)) & ElDoorState(t) = Closed.
+        //cause to close a door is that there is an UA request and the door was open
+        ! t[Time]: Cchange_Door(t, Closed) <- UnansweredRequest(t, ElPosition(t)) & ElDoorState(t) = Open.
         
-        // cause not no change the door is whan no change occures.
+        // cause not no change the door is when no change occures.
         ! t[Time] d[DoorState] d2[DoorState]: 
         	CNchange_Door(t, d) <- Cchange_Door(t, d2) & d ~= d2.
         
-        //! t[Time] floor[Floor]:
-	    //    AnswerRequest(Next(t), floor) <- ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.// & ElDoorState(t) = Open.
+        //a request has been anwsered when the el is at the position, opened its doors and closed it again
+        ! t[Time] floor[Floor]: AnsweredRequest(Next(t), floor) <- ElPosition(t) = floor & 
+        	ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.
     }
     {
-        ElDoorState(Start) = Closed.
-        ! d[DoorState] t[Time]: 
-        	ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
-        ! d[DoorState] t[Time]: 
-        	ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
+        ElDoorState(Start) = Closed. //start with closed doors
+        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
+        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
     }
     
     {// there are request above/below
+        // A request is below when it is below the current position of the el
     	!t[Time]: reqBelow(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
     	!t[Time]: reqAbove(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor>ElPosition(t)}>0.
   	}
 
-    //this could have been done using definitions, but follows the structure of the closesUAReqBelow and closesUAReqAbove and requires a bit more definitiond
+    //this could have been done using definitions, but 
+    //follows the structure of the closesUAReqBelow and closesUAReqAbove dues requires a bit more definitiond  
+    
+	//if closested UA Request exist then it is a closest above or below UA request 
     !t[Time] f[Floor]: closesUAReq(t, f) => closesUAReqBelow(t, f) | closesUAReqAbove(t, f).
+    
+    //there can not be multiple diff closest UAreq
     !t[Time] f[Floor] f2[Floor]: closesUAReq(t, f) & closesUAReq(t, f2) => f=f2.
+    
+    //If there is a closested UAReq below or above the there is at least a closesUAReq
     !t[Time] f[Floor]: closesUAReqBelow(t, f) | closesUAReqAbove(t, f) => #{f2[Floor]: closesUAReq(t, f2)}>0.
+    
+    //if the Closestd UAReq below is closer then above then it is a closesUAReq 
     !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fBelow) <= closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
         ElPosition(t)-fBelow<fAbove-ElPosition(t).
+
+    //if the Closestd UAReq above is closer or eq then below then it is a closesUAReq 
     !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fAbove) <= closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
         ElPosition(t)-fBelow>=fAbove-ElPosition(t).
     
    
-    //Saying what is not the closest floor below is easier than the other way around
+    //analogue above
     !t[Time] f[Floor]: closesUAReqBelow(t, f) => UnansweredRequest(t, f) & f<ElPosition(t).
     !t[Time] f[Floor] f2[Floor]: closesUAReqBelow(t, f) & closesUAReqBelow(t, f2) => f=f2.
     !t[Time] f[Floor]: UnansweredRequest(t, f) & f<ElPosition(t) => #{f2[Floor]: closesUAReqBelow(t, f2)}>0.
+    
+    //If there are multiple UnansweredRequest below then the fartest one is not the closest one
+    //Saying what is not the closest floor below is easier than the other way around
     !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqBelow(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
         fFar<ElPosition(t) & fClose<ElPosition(t) & fClose>fFar.
     
     
-    //this with definitions would make multiple closesUAReqAbove true while we only want one to be true
+    //analogue above
     !t[Time] f[Floor]: closesUAReqAbove(t, f) => UnansweredRequest(t, f) & f>=ElPosition(t).
     !t[Time] f[Floor] f2[Floor]: closesUAReqAbove(t, f) & closesUAReqAbove(t, f2) => f=f2.
     !t[Time] f[Floor]: UnansweredRequest(t, f) & f>=ElPosition(t) => #{f2[Floor]: closesUAReqAbove(t, f2)}>0.
     !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqAbove(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
         fFar>=ElPosition(t) & fClose>=ElPosition(t) & fClose<fFar.
 
+    
     // inertia Requests
     {
         ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor).
-        ! floor[Floor] t[Time]: 
-        	UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & 
-        	~(ElPosition(t) = floor & ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed).
-    }
-    {
-        !t[Time] f[Floor]: I_UnansweredRequest(t,f) <- MakeRequest(t,f) & ~UnansweredRequest(t, f).
-    }
-    
+        // UnansweredRequest keeps existing if not Answered
+        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~AnsweredRequest(Next(t), floor).
+    }    
 }
-//TESTING: for all timepoints: the el can not have both directions to be true
+//for testing: for all timepoints: the el can not have both directions to be true
 theory dir_inv: V_student{
     !t[Time]: ~(ElDirection(t, up) & ElDirection(t, down)).
 }
@@ -194,7 +210,7 @@ Structure S_Inv:V_student{
 }
 procedure proveInvariants(){
     print("inv")
-    //print(isinvariant(T_student,dir_inv,S_Inv)) //Some Test
+    print(isinvariant(T_student,dir_inv,S_Inv)) //Some Test
 	print(isinvariant(T_student,move_inv,S_Inv))
 	print(isinvariant(T_student,door_inv,S_Inv))
 }
@@ -202,7 +218,7 @@ procedure proveInvariants(){
 
 // MAIN PROCEDURE
 procedure main() {
-	//proveInvariants()
+	proveInvariants()
     local CompleteTheory = merge(T_fixed, T_student) 
         
     model = onemodel(CompleteTheory, S19) //<######################################################################
