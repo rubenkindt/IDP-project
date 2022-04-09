@@ -142,13 +142,13 @@ Theory T_student:V_student {
     //follows the structure of the closesUAReqBelow and closesUAReqAbove dues requires a bit more definitiond  
     
 	//if closested UA Request exist then it is a closest above or below UA request 
-    !t[Time] f[Floor]: closesUAReq(t, f) => closesUAReqBelow(t, f) | closesUAReqAbove(t, f).
+    !t[Time] floor[Floor]: closesUAReq(t, floor) => closesUAReqBelow(t, floor) | closesUAReqAbove(t, floor).
     
     //there can not be multiple diff closest UAreq
-    !t[Time] f[Floor] f2[Floor]: closesUAReq(t, f) & closesUAReq(t, f2) => f=f2.
+    !t[Time] floor[Floor] floor2[Floor]: closesUAReq(t, floor) & closesUAReq(t, floor2) => floor=floor2.
     
     //If there is a closested UAReq below or above the there is at least a closesUAReq
-    !t[Time] f[Floor]: closesUAReqBelow(t, f) | closesUAReqAbove(t, f) => #{f2[Floor]: closesUAReq(t, f2)}>0.
+    !t[Time] floor[Floor]: closesUAReqBelow(t, floor) | closesUAReqAbove(t, floor) => #{f2[Floor]: closesUAReq(t, f2)}>0.
     
     //if the Closestd UAReq below is closer then above then it is a closesUAReq 
     !t[Time] fBelow[Floor] fAbove[Floor]: closesUAReq(t, fBelow) <= closesUAReqBelow(t, fBelow) & closesUAReqAbove(t, fAbove) &
@@ -160,9 +160,9 @@ Theory T_student:V_student {
     
    
     //analogue above
-    !t[Time] f[Floor]: closesUAReqBelow(t, f) => UnansweredRequest(t, f) & f<ElPosition(t).
-    !t[Time] f[Floor] f2[Floor]: closesUAReqBelow(t, f) & closesUAReqBelow(t, f2) => f=f2.
-    !t[Time] f[Floor]: UnansweredRequest(t, f) & f<ElPosition(t) => #{f2[Floor]: closesUAReqBelow(t, f2)}>0.
+    !t[Time] floor[Floor]: closesUAReqBelow(t, floor) => UnansweredRequest(t, floor) & floor<ElPosition(t).
+    !t[Time] floor[Floor] floor2[Floor]: closesUAReqBelow(t, floor) & closesUAReqBelow(t, floor2) => floor=floor2.
+    !t[Time] floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t) => #{floor2[Floor]: closesUAReqBelow(t, floor2)}>0.
     
     //If there are multiple UnansweredRequest below then the fartest one is not the closest one
     //Saying what is not the closest floor below is easier than the other way around
@@ -171,16 +171,16 @@ Theory T_student:V_student {
     
     
     //analogue above
-    !t[Time] f[Floor]: closesUAReqAbove(t, f) => UnansweredRequest(t, f) & f>=ElPosition(t).
-    !t[Time] f[Floor] f2[Floor]: closesUAReqAbove(t, f) & closesUAReqAbove(t, f2) => f=f2.
-    !t[Time] f[Floor]: UnansweredRequest(t, f) & f>=ElPosition(t) => #{f2[Floor]: closesUAReqAbove(t, f2)}>0.
+    !t[Time] floor[Floor]: closesUAReqAbove(t, floor) => UnansweredRequest(t, floor) & floor>=ElPosition(t).
+    !t[Time] floor[Floor] floor2[Floor]: closesUAReqAbove(t, floor) & closesUAReqAbove(t, floor2) => floor=floor2.
+    !t[Time] floor[Floor]: UnansweredRequest(t, floor) & floor>=ElPosition(t) => #{floor2[Floor]: closesUAReqAbove(t, floor2)}>0.
     !t[Time] fClose[Floor] fFar[Floor]: ~closesUAReqAbove(t, fFar) <= UnansweredRequest(t, fClose) & UnansweredRequest(t, fFar) &
         fFar>=ElPosition(t) & fClose>=ElPosition(t) & fClose<fFar.
 
     
     // inertia Requests
     {
-        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor).
+        ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- MakeRequest(t,floor) & ~UnansweredRequest(t, floor).
         // UnansweredRequest keeps existing if not Answered
         ! floor[Floor] t[Time]: UnansweredRequest(Next(t), floor) <- UnansweredRequest(t, floor) & ~AnsweredRequest(Next(t), floor).
     }    
@@ -213,10 +213,10 @@ procedure proveInvariants(){
 
 // MAIN PROCEDURE
 procedure main() {
-	proveInvariants()
+	//proveInvariants()
     local CompleteTheory = merge(T_fixed, T_student) 
         
-    model = onemodel(CompleteTheory, S19) //<######################################################################
+    model = onemodel(CompleteTheory, SMultiple) //<######################################################################
     
     // Printing model 
     print(model)
