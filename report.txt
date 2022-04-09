@@ -24,7 +24,7 @@ Ruben Kindt r0656495
 -    closesUAReqBelow(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request below the elevator.
 -    closesUAReqAbove(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request above the elevator.
 
-hours spend: 30h
+hours spend: 30h 
 
 Major revision: no
 only removed an outdated formula
