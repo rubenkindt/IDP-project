@@ -3,7 +3,10 @@ Ruben Kindt r0656495
 
     type Direction constructed from {up, down}
 
+-    opposite(Direction):Direction is true when the opposite of a Direction comes out of it
 -    ElDirection(Time, Direction) is true iff at time Time the elevator has a direction Direction
+-    C_ElDirection(Time, Direction)	is true if there is a cause to change Direction at Time
+-    CN_ElDirection(Time, Direction) is true if there is a cause to not change Direction at Time
 
 -    Cchange_ElPos(Time, Floor) is true iff at time Time the elevator has a reason to change position to floor Floor
 -    CNchange_ElPos(Time, Floor) is true iff at time Time the elevator has no reason to change position to floor Floor
