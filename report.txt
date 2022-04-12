@@ -2,8 +2,10 @@ Report for the course Modelling of Complex Systems (B-KUL-H0N05A) of the KULeuve
 Ruben Kindt r0656495
 
     type Direction constructed from {up, down}
+	Do note that I did not implement a "none" directions, since I implemented ElDirection(Time, Direction) this direction is a set the empty set represents having no direction.  This causes the both directions can be true at the same time but this has been prevented in the implementation.
 
--    opposite(Direction):Direction is true when the opposite of a Direction comes out of it
+-    opposite(Direction):Direction is true when the opposite of a Direction comes out of it. This because we can't say "not up" because it contains the empty set and the {down}. While I need the {down} at certain spots
+
 -    ElDirection(Time, Direction) is true iff at time Time the elevator has a direction Direction
 -    C_ElDirection(Time, Direction)	is true if there is a cause to change Direction at Time
 -    CN_ElDirection(Time, Direction) is true if there is a cause to not change Direction at Time
@@ -14,11 +16,12 @@ Ruben Kindt r0656495
 -    Cchange_Door(Time, DoorState) is true iff at time Time the elevator has a reason to change its door Door
 -    CNchange_Door(Time, DoorState) is true iff at time Time the elevator has no reason to change its door Door
 
--    AnswerRequest(Time, Floor) is true iff at time Time the elevator answered a request at floor Floor, currently not used but I predict I will need it at the exam
+-    AnswerRequest(Time, Floor) is true iff at time Time the elevator answered a request at floor Floor, this predicat is being used as the cause to not continue an UARequest, instead of the normalCN_UARequest since I found this name to be more logical.
 
--    maxFloor: Floor is a function that always returns the highest floor Floor, used to limit the elevators reach
+-    maxFloor: Floor is a function that always returns the highest floor Floor, used to limit the elevators reach. I did not do this for the lowest floor since It was specified that the lowest floor would alwars be floor zero.
 
--    reqBelow(Time) is true iff at time Time there is an unanswered request below the elevator.
+Instead of copy pasting the rules of what a closest request is, i creatate multiple smaller predicates to replace it. This makes for an easier time when debugging
+-    reqBelow(Time) is true iff at time Time there is an unanswered request below the elevator. 
 -    reqAbove(Time) is true iff at time Time there is an unanswered request above the elevator.
 -    closesUAReq(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request.
 -    closesUAReqBelow(Time, Floor) is true iff at time Time there is an unanswered request and it is the closest unanswered request below the elevator.
