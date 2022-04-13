@@ -10,9 +10,11 @@ Ruben Kindt r0656495
 -    C_ElDirection(Time, Direction)	is true if there is a cause to change Direction at Time
 -    CN_ElDirection(Time, Direction) is true if there is a cause to not change Direction at Time
 
+-	 IPosition(Time, Floor) is true iff at time Start the elevator has floor zero
 -    Cchange_ElPos(Time, Floor) is true iff at time Time the elevator has a reason to change position to floor Floor
 -    CNchange_ElPos(Time, Floor) is true iff at time Time the elevator has no reason to change position to floor Floor
 
+-	 IDoor(Time, DoorState) is true iff at time Start the door is closed
 -    Cchange_Door(Time, DoorState) is true iff at time Time the elevator has a reason to change its door Door
 -    CNchange_Door(Time, DoorState) is true iff at time Time the elevator has no reason to change its door Door
 

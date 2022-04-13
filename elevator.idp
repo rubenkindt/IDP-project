@@ -35,12 +35,15 @@ LTCvocabulary V_student {
     C_ElDirection(Time, Direction)		// cause to change direction
     CN_ElDirection(Time, Direction)		// cause to not change direction
     
+    IPosition(Time, Floor)
     Cchange_ElPos(Time, Floor)			// cause to position change
     CNchange_ElPos(Time, Floor)			// cause to not position change
 
+    IDoor(Time, DoorState)
     Cchange_Door(Time, DoorState)
     CNchange_Door(Time, DoorState)
     
+    IRequest(Time, Floor)
     AnsweredRequest(Time, Floor)
     
     maxFloor: Floor 
@@ -73,11 +76,12 @@ Theory T_student:V_student {
         opposite(down)=up.
     }
     {//inertias elavator position
-        ElPosition(Start) = 0.
+        ! floor[Floor]: ElPosition(Start) = floor <- IPosition(Start, floor).
         ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor <- Cchange_ElPos(t, floor).
         ! floor[Floor] t[Time]: ElPosition(Next(t)) = floor <- ElPosition(t) = floor & ~CNchange_ElPos(t, floor) .
     }
     {
+        IPosition(Start, 0) <- .
         // cause to go up a floor is: 
         //that the direction is up, not down, door is closed and we are not handling a request atm
         ! floor[Floor] t[Time]: Cchange_ElPos(t, floor + 1) <- ElPosition(t) = floor & 
@@ -123,6 +127,13 @@ Theory T_student:V_student {
 
     
     {//doors
+         
+        ! d[DoorState]: ElDoorState(Start) = d <- IDoor(Start, d).
+        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
+        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
+    }
+    {
+        IDoor(Start, Closed) <- .
         //cause to open a door is that there is an UA request and the door was closed
         ! t[Time]: Cchange_Door(t, Open)   <- UnansweredRequest(t, ElPosition(t)) & ElDoorState(t) = Closed.
         //cause to close a door is that there is an UA request and the door was open
@@ -136,12 +147,6 @@ Theory T_student:V_student {
         ! t[Time] floor[Floor]: AnsweredRequest(Next(t), floor) <- ElPosition(t) = floor & 
         	ElDoorState(t) = Open & ElDoorState(Next(t)) = Closed.
     }
-    {
-        ElDoorState(Start) = Closed. //start with closed doors
-        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- Cchange_Door(t, d).
-        ! d[DoorState] t[Time]: ElDoorState(Next(t)) = d <- ElDoorState(t) = d & ~CNchange_Door(t, d).
-    }
-    
     {// there are request above/below
         // A request is below when it is below the current position of the el
     	!t[Time]: reqBelow(t) <- #{floor[Floor]: UnansweredRequest(t, floor) & floor<ElPosition(t)}>0.
